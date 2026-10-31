@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0b1117"/>
+  <rect x="20" y="20" width="472" height="472" rx="96"
+        fill="none" stroke="#54d8e8" stroke-width="8"/>
+  <circle cx="256" cy="256" r="158"
+          fill="#54d8e8" fill-opacity=".07"
+          stroke="#54d8e8" stroke-opacity=".45" stroke-width="3"/>
+  <text x="256" y="335" text-anchor="middle"
+        font-family="Arial,sans-serif" font-size="240"
+        font-weight="bold" fill="#54d8e8">F</text>
+</svg>
