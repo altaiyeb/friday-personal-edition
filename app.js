@@ -1050,12 +1050,100 @@
 
   /* BACKUP PLACEHOLDERS */
 
-  $("#export-backup-button").addEventListener("click", () => {
-    toast("Encrypted ZIP backup is being implemented next.");
+  
+  /* ENCRYPTED BACKUP AND RESTORE */
+
+  $("#export-backup-button").addEventListener("click", async () => {
+    if (!data || locked) return;
+
+    const passphrase = prompt(
+      "Create a backup passphrase (at least 12 characters).\nKeep it safe. FRIDAY cannot recover it."
+    );
+
+    if (passphrase === null) return;
+
+    if (passphrase.length < 12) {
+      toast("Backup passphrase must be at least 12 characters.");
+      return;
+    }
+
+    const confirmation = prompt("Confirm your backup passphrase.");
+
+    if (confirmation !== passphrase) {
+      toast("The passphrases do not match.");
+      return;
+    }
+
+    try {
+      await saveQueue;
+      const archive = await FridayBackup.create(data, passphrase);
+      const url = URL.createObjectURL(archive);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `FRIDAY-Backup-${new Date()
+        .toISOString()
+        .slice(0, 10)}.zip`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      toast("Encrypted backup created successfully.");
+    } catch (error) {
+      console.error("Backup export failed:", error);
+      toast(error.message || "Could not create backup.");
+    }
   });
 
   $("#import-backup-button").addEventListener("click", () => {
-    toast("Encrypted ZIP restore is being implemented next.");
+    if (!data || locked) return;
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".zip,application/zip";
+    fileInput.hidden = true;
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      fileInput.remove();
+
+      if (!file) return;
+
+      const confirmed = confirm(
+        "Restoring this backup will replace your current FRIDAY data. Continue?"
+      );
+
+      if (!confirmed) return;
+
+      const passphrase = prompt(
+        "Enter the passphrase used when this backup was created."
+      );
+
+      if (passphrase === null) return;
+
+      try {
+        await saveQueue;
+
+        const restored = await FridayBackup.restore(file, passphrase);
+        const safeData = normaliseData(restored);
+
+        await FridayVault.save(safeData);
+
+        data = safeData;
+        renderAll();
+
+        toast("FRIDAY backup restored successfully.");
+      } catch (error) {
+        console.error("Backup restore failed:", error);
+        toast(error.message || "Could not restore backup.");
+      }
+    });
+
+    document.body.appendChild(fileInput);
+    fileInput.click();
   });
 
   /* RENDER */
