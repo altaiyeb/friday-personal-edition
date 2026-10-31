@@ -226,8 +226,9 @@
     }
 
     timezoneSelect.value = currentZone;
-    }
- function showPage(page) {
+  }
+
+  function showPage(page) {
     const target = $(`#page-${page}`);
     if (!target) return;
 
