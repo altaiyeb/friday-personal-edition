@@ -292,8 +292,7 @@
       throw new Error("Backup contains unsupported appearance settings.");
     }
 
-    const allowedCurrencies = [
-          const currency = data.settings.currency;
+        const currency = data.settings.currency;
 
     if (
       typeof currency !== "string" ||
@@ -310,7 +309,7 @@
     } catch {
       throw new Error("Backup contains an unsupported currency.");
     }
-
+     
   /* ZIP FORMAT — STORE METHOD, NO COMPRESSION */
 
   function createZip(filename, fileBytes) {
