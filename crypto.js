@@ -193,7 +193,11 @@
     return true;
   }
 
-  async function unlock(pin) {
+    async function unlock(pin) {
+    // Clear any previous unlocked session before attempting access.
+    key = null;
+    unlockedData = null;
+
     await openDatabase();
 
     const config = await readRecord("config", "settings");
@@ -224,7 +228,7 @@
 
     return structuredClone(unlockedData);
   }
-
+  
   async function save(data) {
     if (!key) {
       throw new Error("Unlock FRIDAY before saving data.");
