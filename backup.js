@@ -293,20 +293,23 @@
     }
 
     const allowedCurrencies = [
-      "USD", "BDT", "EUR", "GBP", "INR", "JPY", "CAD", "AUD"
-    ];
-
-    if (!allowedCurrencies.includes(data.settings.currency)) {
-      throw new Error("Backup contains an unsupported currency.");
-    }
+          const currency = data.settings.currency;
 
     if (
-      typeof data.settings.dateFormat !== "string" ||
-      !["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"].includes(data.settings.dateFormat)
+      typeof currency !== "string" ||
+      !/^[A-Z]{3}$/.test(currency)
     ) {
-      throw new Error("Backup date format is invalid.");
+      throw new Error("Backup contains an invalid currency.");
     }
-  }
+
+    try {
+      new Intl.NumberFormat("en", {
+        style: "currency",
+        currency
+      });
+    } catch {
+      throw new Error("Backup contains an unsupported currency.");
+    }
 
   /* ZIP FORMAT — STORE METHOD, NO COMPRESSION */
 
