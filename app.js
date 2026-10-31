@@ -228,7 +228,9 @@
     applySettings();
     updateGreeting();
     renderAll();
-    showPage("home");
+    showPage("home"); 
+     
+     resetInactivityTimer();
   }
 
   function showLockScreen() {
