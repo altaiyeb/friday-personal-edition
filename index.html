@@ -1,62 +1,630 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101820"><meta name="description" content="Private offline personal command centre">
-  <link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css"><title>FRIDAY Personal Edition</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="description" content="FRIDAY — Your personal command centre.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>FRIDAY — Personal Edition</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="crypto.js" defer></script> 
+  <script src="backup.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
+
 <body>
-  <div id="lock" class="lock-screen">
-    <div class="lock-card"><div class="mark">F</div><p class="eyebrow">PERSONAL EDITION</p><h1>FRIDAY</h1>
-      <p id="lock-copy">Enter your PIN to continue</p><input id="pin" type="password" inputmode="numeric" maxlength="12" placeholder="PIN">
-      <button id="unlock">Unlock</button><small id="lock-error"></small>
-    </div>
-  </div>
-  <div id="app" class="app hidden">
-    <aside class="sidebar"><div class="brand"><span class="mark small">F</span><div><b>FRIDAY</b><small>PERSONAL EDITION</small></div></div>
-      <nav>
-        <button class="nav active" data-page="home">⌂ <span>Command Centre</span></button>
-        <button class="nav" data-page="personal">◷ <span>Personal</span></button>
-        <button class="nav" data-page="finance">৳ <span>Finance</span></button>
-        <button class="nav" data-page="assistant">⌘ <span>Assistant</span></button>
-        <button class="nav" data-page="insights">▥ <span>Insights</span></button>
-        <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
-      </nav><p class="sidebar-foot">LOCAL MODE · DHAKA TIME</p>
-    </aside>
-    <main>
-      <header><div><p class="eyebrow" id="date-line">YOUR PERSONAL COMMAND CENTRE</p><h1 id="page-title">Good day, sir.</h1></div><div class="status"><i></i> OFFLINE READY</div></header>
-      <section id="home" class="page">
-        <div class="hero"><div><p class="eyebrow">SYSTEM STATUS</p><h2>Your day, under control.</h2><p>Your information stays on this device. Nothing is sent to a server.</p></div><div class="orb">F</div></div>
-        <div class="stats">
-          <article class="panel"><span>MONTHLY INCOME</span><strong id="home-income">৳0.00</strong></article>
-          <article class="panel"><span>MONTHLY EXPENSES</span><strong id="home-expense">৳0.00</strong></article>
-          <article class="panel"><span>REMAINING BUDGET</span><strong id="home-remaining">৳0.00</strong></article>
-          <article class="panel"><span>OPEN TASKS</span><strong id="home-tasks">0</strong></article>
+  <div id="app" class="app-shell">
+
+    <!-- SECURITY SCREEN -->
+    <section id="lock-screen" class="lock-screen">
+      <div class="lock-content">
+        <div class="brand-mark" id="lock-logo">F</div>
+        <p class="eyebrow">PERSONAL COMMAND CENTRE</p>
+        <h1>FRIDAY</h1>
+        <p class="muted">Your world. Under control.</p>
+
+        <form id="unlock-form" class="lock-form">
+          <label for="unlock-password">Your passphrase</label>
+          <input
+            id="unlock-password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter your passphrase"
+            required
+          >
+          <button id="unlock-button" class="primary-button" type="submit">
+            Unlock FRIDAY
+          </button>
+        </form>
+
+        <form id="setup-form" class="lock-form" hidden>
+          <label for="setup-password">Create a passphrase</label>
+          <input
+            id="setup-password"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            placeholder="At least 8 characters"
+            required
+          >
+
+          <label for="setup-confirm">Confirm passphrase</label>
+          <input
+            id="setup-confirm"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            placeholder="Enter it again"
+            required
+          >
+
+          <button class="primary-button" type="submit">
+            Create secure vault
+          </button>
+        </form>
+
+        <p id="lock-message" class="status-message" role="status"></p>
+        <p class="security-caption">Your data stays on your device.</p>
+      </div>
+    </section>
+
+    <!-- MAIN APPLICATION -->
+    <div id="main-app" class="main-app" hidden>
+
+      <!-- TOP BAR -->
+      <header class="top-bar">
+        <div class="brand-group">
+          <div class="brand-mark small" id="app-logo">F</div>
+          <div>
+            <p class="eyebrow">PERSONAL EDITION</p>
+            <h1>FRIDAY</h1>
+          </div>
         </div>
-        <div class="columns"><article class="panel"><div class="panel-head"><h3>Today's priorities</h3><button class="text-btn" data-go="personal">View all →</button></div><div id="home-task-list" class="empty">No tasks yet. A pleasantly uncluttered schedule.</div></article>
-        <article class="panel"><div class="panel-head"><h3>Quick command</h3></div><form id="quick-command"><input id="home-command" placeholder='Try: "add expense 120 food lunch"'><button>Run</button></form><p class="muted">Commands are processed locally using simple rules.</p></article></div>
+
+        <div class="top-actions">
+          <button id="quick-add-button" class="icon-button" aria-label="Quick add">
+            +
+          </button>
+          <button id="lock-button" class="icon-button" aria-label="Lock FRIDAY">
+            ⌑
+          </button>
+        </div>
+      </header>
+
+      <!-- GREETING -->
+      <section class="welcome-section">
+        <div>
+          <p class="eyebrow" id="current-date">YOUR DAY</p>
+          <h2 id="greeting">Good day.</h2>
+          <p class="muted" id="daily-summary">
+            Here's your overview.
+          </p>
+        </div>
       </section>
-      <section id="personal" class="page hidden">
-        <div class="columns"><article class="panel"><h3>Tasks</h3><form id="task-form"><input id="task-title" required placeholder="What needs doing?"><input id="task-date" type="date"><button>Add task</button></form><div id="tasks-list" class="stack empty">No tasks added.</div></article>
-        <article class="panel"><h3>Notes</h3><form id="note-form"><input id="note-title" placeholder="Note title" required><textarea id="note-body" placeholder="Write a note..."></textarea><button>Save note</button></form><div id="notes-list" class="stack empty">No notes saved.</div></article></div>
-        <article class="panel"><h3>Pet profiles</h3><div class="pet-grid"><div class="pet"><b>Lumi</b><span>Profile ready · Add care notes in Notes</span></div><div class="pet"><b>Enzo</b><span>Profile ready · Add care notes in Notes</span></div></div></article>
+
+      <!-- DASHBOARD -->
+      <main id="page-container">
+
+        <section id="page-home" class="page active">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">OVERVIEW</p>
+              <h2>Command Centre</h2>
+            </div>
+            <span class="live-indicator">● ONLINE</span>
+          </div>
+
+          <div class="dashboard-grid">
+
+            <article class="panel hero-panel">
+              <p class="eyebrow">YOUR DAY</p>
+              <h3 id="dashboard-date">Today</h3>
+              <p id="dashboard-agenda" class="muted">
+                Your schedule will appear here.
+              </p>
+              <button class="text-button" data-page="calendar">
+                View calendar →
+              </button>
+            </article>
+
+            <article class="panel stat-panel">
+              <p class="eyebrow">TASKS</p>
+              <strong id="task-count">0</strong>
+              <span class="muted">Pending tasks</span>
+            </article>
+
+            <article class="panel stat-panel">
+              <p class="eyebrow">NOTES</p>
+              <strong id="note-count">0</strong>
+              <span class="muted">Saved notes</span>
+            </article>
+
+            <article class="panel stat-panel">
+              <p class="eyebrow">PROFILES</p>
+              <strong id="profile-count">0</strong>
+              <span class="muted">Your profiles</span>
+            </article>
+
+          </div>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">PRIORITIES</p>
+                <h3>Today's tasks</h3>
+              </div>
+              <button class="text-button" data-page="tasks">See all</button>
+            </div>
+            <div id="dashboard-tasks" class="item-list">
+              <div class="empty-state">No tasks yet.</div>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">FINANCIAL OVERVIEW</p>
+                <h3>Your finances</h3>
+              </div>
+              <button class="text-button" data-page="finance">Details</button>
+            </div>
+
+            <div class="panel finance-overview">
+              <span class="muted">Current balance</span>
+              <strong id="dashboard-balance">—</strong>
+              <div class="finance-mini-grid">
+                <div>
+                  <span class="muted">Income</span>
+                  <strong id="dashboard-income">—</strong>
+                </div>
+                <div>
+                  <span class="muted">Expenses</span>
+                  <strong id="dashboard-expenses">—</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">UPCOMING</p>
+                <h3>Reminders</h3>
+              </div>
+              <button class="text-button" data-page="calendar">View all</button>
+            </div>
+            <div id="dashboard-reminders" class="item-list">
+              <div class="empty-state">Nothing scheduled yet.</div>
+            </div>
+          </section>
+        </section>
+
+        <!-- TASKS -->
+        <section id="page-tasks" class="page" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">STAY PRODUCTIVE</p>
+              <h2>Tasks</h2>
+            </div>
+            <button class="primary-button compact" id="add-task-button">
+              + New task
+            </button>
+          </div>
+
+          <div class="filter-bar" id="task-filters">
+            <button class="filter-button active" data-filter="all">All</button>
+            <button class="filter-button" data-filter="pending">Pending</button>
+            <button class="filter-button" data-filter="completed">Completed</button>
+          </div>
+
+          <div id="task-list" class="item-list">
+            <div class="empty-state">Your tasks will appear here.</div>
+          </div>
+        </section>
+
+        <!-- NOTES -->
+        <section id="page-notes" class="page" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">YOUR THOUGHTS</p>
+              <h2>Notes</h2>
+            </div>
+            <button class="primary-button compact" id="add-note-button">
+              + New note
+            </button>
+          </div>
+
+          <input
+            id="note-search"
+            class="search-input"
+            type="search"
+            placeholder="Search your notes..."
+          >
+
+          <div id="note-list" class="notes-grid">
+            <div class="empty-state">Your notes will appear here.</div>
+          </div>
+        </section>
+
+        <!-- CALENDAR -->
+        <section id="page-calendar" class="page" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">PLAN AHEAD</p>
+              <h2>Calendar</h2>
+            </div>
+            <button class="primary-button compact" id="add-event-button">
+              + New event
+            </button>
+          </div>
+
+          <div class="panel calendar-panel">
+            <div class="calendar-toolbar">
+              <button id="calendar-previous" class="icon-button" aria-label="Previous month">‹</button>
+              <h3 id="calendar-month">Month Year</h3>
+              <button id="calendar-next" class="icon-button" aria-label="Next month">›</button>
+            </div>
+
+            <div id="calendar-grid" class="calendar-grid"></div>
+          </div>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Upcoming events</h3>
+            </div>
+            <div id="event-list" class="item-list">
+              <div class="empty-state">No events scheduled.</div>
+            </div>
+          </section>
+        </section>
+
+        <!-- FINANCE -->
+        <section id="page-finance" class="page" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MONEY MANAGEMENT</p>
+              <h2>Finances</h2>
+            </div>
+            <button class="primary-button compact" id="add-transaction-button">
+              + Add
+            </button>
+          </div>
+
+          <div class="panel balance-panel">
+            <p class="eyebrow">TOTAL BALANCE</p>
+            <strong id="finance-balance">—</strong>
+            <div class="finance-mini-grid">
+              <div>
+                <span class="muted">Income</span>
+                <strong id="finance-income">—</strong>
+              </div>
+              <div>
+                <span class="muted">Expenses</span>
+                <strong id="finance-expenses">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Budgets</h3>
+              <button class="text-button" id="add-budget-button">+ Budget</button>
+            </div>
+            <div id="budget-list" class="item-list">
+              <div class="empty-state">No budgets created.</div>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Recent transactions</h3>
+            </div>
+            <div id="transaction-list" class="item-list">
+              <div class="empty-state">No transactions recorded.</div>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Savings goals</h3>
+              <button class="text-button" id="add-goal-button">+ Goal</button>
+            </div>
+            <div id="savings-list" class="item-list">
+              <div class="empty-state">No savings goals yet.</div>
+            </div>
+          </section>
+        </section>
+
+        <!-- PROFILES -->
+        <section id="page-profiles" class="page" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">YOUR WORLD</p>
+              <h2>Profiles</h2>
+            </div>
+            <button class="primary-button compact" id="add-profile-button">
+              + New profile
+            </button>
+          </div>
+
+          <p class="muted">
+            Organise the people, pets, projects, vehicles and things that matter to you.
+          </p>
+
+          <input
+            id="profile-search"
+            class="search-input"
+            type="search"
+            placeholder="Search profiles..."
+          >
+
+          <div id="profile-list" class="profile-grid">
+            <div class="empty-state">Create your first profile.</div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="page-settings" class="page" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MAKE IT YOURS</p>
+              <h2>Settings</h2>
+            </div>
+          </div>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Appearance</h3>
+            </div>
+
+            <div class="panel settings-panel">
+              <p class="setting-title">Choose a theme</p>
+              <div id="theme-options" class="theme-grid">
+
+                <button class="theme-option" data-theme="obsidian">
+                  <span class="theme-preview obsidian-preview"></span>
+                  <span>Obsidian</span>
+                </button>
+
+                <button class="theme-option" data-theme="nebula">
+                  <span class="theme-preview nebula-preview"></span>
+                  <span>Nebula</span>
+                </button>
+
+                <button class="theme-option" data-theme="arctic">
+                  <span class="theme-preview arctic-preview"></span>
+                  <span>Arctic</span>
+                </button>
+
+                <button class="theme-option" data-theme="emerald">
+                  <span class="theme-preview emerald-preview"></span>
+                  <span>Emerald</span>
+                </button>
+
+                <button class="theme-option" data-theme="inferno">
+                  <span class="theme-preview inferno-preview"></span>
+                  <span>Inferno</span>
+                </button>
+
+              </div>
+
+              <div class="setting-divider"></div>
+
+              <label class="setting-title" for="accent-colour">
+                Custom accent colour
+              </label>
+              <input id="accent-colour" type="color" value="#36c9e8">
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>FRIDAY identity</h3>
+            </div>
+
+            <div class="panel settings-panel">
+              <p class="setting-title">Choose your logo</p>
+
+              <div id="logo-options" class="logo-grid">
+                <button class="logo-option" data-logo="monogram">
+                  <span class="logo-preview logo-monogram">F</span>
+                  <span>Monogram</span>
+                </button>
+
+                <button class="logo-option" data-logo="orbit">
+                  <span class="logo-preview logo-orbit">◎</span>
+                  <span>Orbit</span>
+                </button>
+
+                <button class="logo-option" data-logo="core">
+                  <span class="logo-preview logo-core">▦</span>
+                  <span>Core</span>
+                </button>
+
+                <button class="logo-option" data-logo="nexus">
+                  <span class="logo-preview logo-nexus">⬡</span>
+                  <span>Nexus</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Preferences</h3>
+            </div>
+
+            <div class="panel settings-panel">
+              <label class="setting-row">
+                <span>
+                  <strong>Currency</strong>
+                  <small class="muted">Your financial display currency</small>
+                </span>
+                <select id="currency-setting">
+                  <option value="USD">USD</option>
+                  <option value="BDT">BDT</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="INR">INR</option>
+                  <option value="JPY">JPY</option>
+                  <option value="CAD">CAD</option>
+                  <option value="AUD">AUD</option>
+                </select>
+              </label>
+
+              <div class="setting-divider"></div>
+
+              <label class="setting-row">
+                <span>
+                  <strong>Date format</strong>
+                  <small class="muted">How dates are displayed</small>
+                </span>
+                <select id="date-format-setting">
+                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                </select>
+              </label>
+
+              <div class="setting-divider"></div>
+
+              <label class="setting-row">
+                <span>
+                  <strong>Time zone</strong>
+                  <small class="muted">Your local time zone</small>
+                </span>
+                <select id="timezone-setting">
+                  <option value="local">Device default</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="section-heading">
+              <h3>Security and backups</h3>
+            </div>
+
+            <div class="panel settings-panel">
+              <button id="change-password-button" class="setting-action">
+                Change passphrase <span>›</span>
+              </button>
+
+              <div class="setting-divider"></div>
+
+              <button id="export-backup-button" class="setting-action">
+                Export encrypted backup <span>›</span>
+              </button>
+
+              <div class="setting-divider"></div>
+
+              <button id="import-backup-button" class="setting-action">
+                Import encrypted backup <span>›</span>
+              </button>
+
+              <input id="backup-file-input" type="file" accept=".zip,application/zip" hidden>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <div class="panel settings-panel">
+              <p class="eyebrow">FRIDAY PERSONAL EDITION</p>
+              <h3>Version 2.0</h3>
+              <p class="muted">Private by design. Built around your world.</p>
+            </div>
+          </section>
+        </section>
+
+      </main>
+
+      <!-- BOTTOM NAVIGATION -->
+      <nav class="bottom-navigation" aria-label="Main navigation">
+        <button class="nav-item active" data-page="home" aria-label="Home">
+          <span class="nav-icon">⌂</span>
+          <span>Home</span>
+        </button>
+
+        <button class="nav-item" data-page="tasks" aria-label="Tasks">
+          <span class="nav-icon">✓</span>
+          <span>Tasks</span>
+        </button>
+
+        <button class="nav-item" data-page="notes" aria-label="Notes">
+          <span class="nav-icon">▤</span>
+          <span>Notes</span>
+        </button>
+
+        <button class="nav-item" data-page="calendar" aria-label="Calendar">
+          <span class="nav-icon">▦</span>
+          <span>Calendar</span>
+        </button>
+
+        <button class="nav-item" data-page="settings" aria-label="Settings">
+          <span class="nav-icon">⚙</span>
+          <span>More</span>
+        </button>
+      </nav>
+
+    </div>
+
+    <!-- REUSABLE EDITOR PANEL -->
+    <div id="editor-overlay" class="modal-overlay" hidden>
+      <section class="editor-panel" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+        <div class="modal-handle"></div>
+
+        <div class="section-heading">
+          <h2 id="editor-title">Create new</h2>
+          <button id="close-editor-button" class="icon-button" aria-label="Close">×</button>
+        </div>
+
+        <form id="editor-form">
+          <div id="editor-fields"></div>
+
+          <div class="editor-actions">
+            <button type="button" id="cancel-editor-button" class="secondary-button">
+              Cancel
+            </button>
+            <button type="submit" class="primary-button">
+              Save
+            </button>
+          </div>
+        </form>
       </section>
-      <section id="finance" class="page hidden">
-        <div class="stats"><article class="panel"><span>INCOME THIS MONTH</span><strong id="fin-income">৳0.00</strong></article><article class="panel"><span>EXPENSES THIS MONTH</span><strong id="fin-expense">৳0.00</strong></article><article class="panel"><span>NET CASH FLOW</span><strong id="fin-net">৳0.00</strong></article></div>
-        <div class="columns"><article class="panel"><h3>Add transaction</h3><form id="transaction-form"><select id="tx-type"><option value="expense">Expense</option><option value="income">Income</option></select><input id="tx-amount" type="number" min="0.01" step="0.01" required placeholder="Amount (BDT)"><input id="tx-category" required placeholder="Category (e.g. Food)"><input id="tx-note" placeholder="Description (optional)"><input id="tx-date" type="date" required><button>Save transaction</button></form></article>
-        <article class="panel"><h3>Monthly category budgets</h3><form id="budget-form"><input id="budget-category" required placeholder="Category"><input id="budget-amount" type="number" min="0.01" step="0.01" required placeholder="Budget (BDT)"><button>Set budget</button></form><div id="budgets-list" class="stack empty">No budgets set.</div></article></div>
-        <article class="panel"><div class="panel-head"><h3>Transaction history</h3><button id="csv" class="text-btn">Export CSV ↓</button></div><div id="transactions-list" class="stack empty">No transactions recorded.</div></article>
+    </div>
+
+    <!-- QUICK ACTION PANEL -->
+    <div id="quick-add-overlay" class="modal-overlay" hidden>
+      <section class="quick-add-panel" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
+        <div class="modal-handle"></div>
+
+        <div class="section-heading">
+          <h2 id="quick-add-title">Quick add</h2>
+          <button id="close-quick-add-button" class="icon-button" aria-label="Close">×</button>
+        </div>
+
+        <div class="quick-action-grid">
+          <button data-create="task">✓<span>Task</span></button>
+          <button data-create="note">▤<span>Note</span></button>
+          <button data-create="event">▦<span>Event</span></button>
+          <button data-create="transaction">＋<span>Transaction</span></button>
+          <button data-create="reminder">◷<span>Reminder</span></button>
+          <button data-create="profile">◎<span>Profile</span></button>
+        </div>
       </section>
-      <section id="assistant" class="page hidden"><article class="panel"><p class="eyebrow">LOCAL COMMAND PARSER</p><h2>At your service.</h2><p class="muted">This is a rule-based offline assistant, not a generative AI model.</p><form id="command-form"><input id="command" placeholder='e.g. "add expense 250 transport bus"'><button>Execute</button></form><div id="command-result" class="result">Awaiting instruction.</div><h3>Supported examples</h3><ul class="muted"><li>add expense 120 food lunch</li><li>add income 5000 allowance</li><li>show balance</li><li>list tasks</li></ul></article></section>
-      <section id="insights" class="page hidden"><article class="panel"><h3>Monthly overview</h3><p class="muted">Insights are calculated from transactions and budgets you enter.</p><div id="insights-content" class="stack"></div></article></section>
-      <section id="settings" class="page hidden"><div class="columns"><article class="panel"><h3>Security</h3><p class="muted">Set or change your local PIN. This browser lock is not equivalent to native device security.</p><form id="pin-form"><input id="new-pin" type="password" inputmode="numeric" minlength="4" maxlength="12" placeholder="New PIN (4–12 digits)" required><button>Update PIN</button></form></article>
-        <article class="panel"><h3>Backup & restore</h3><p class="muted">Backups are encrypted with a passphrase. Keep the passphrase safe; it cannot be recovered.</p><input id="backup-pass" type="password" placeholder="Backup passphrase"><div class="button-row"><button id="backup">Export encrypted backup</button><button id="restore" class="secondary">Import backup</button><input id="backup-file" type="file" accept=".json" hidden></div><button id="export-csv" class="secondary">Export transactions CSV</button></article></div>
-        <article class="panel"><h3>Data policy</h3><p>All records are stored locally in this browser. There is no account, cloud sync, analytics, or remote AI service. Clearing browser data can erase your records. Export backups regularly.</p><p class="muted">Currency: BDT (৳) · Timezone: Asia/Dhaka</p></article>
-      </section>
-      <footer>FRIDAY PERSONAL EDITION <span>PRIVATE BY DESIGN</span></footer>
-    </main>
-    <nav class="mobile-nav"><button data-page="home">⌂</button><button data-page="personal">◷</button><button data-page="finance">৳</button><button data-page="assistant">⌘</button><button data-page="settings">⚙</button></nav>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
   </div>
-  <script src="app.js"></script>
-</body></html>
+</body>
+</html>
