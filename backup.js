@@ -371,7 +371,7 @@
     return concat(localHeader, fileBytes, centralHeader, end);
   }
 
-  function readZip(bytes) {
+    function readZip(bytes) {
     if (!(bytes instanceof Uint8Array)) {
       bytes = new Uint8Array(bytes);
     }
@@ -386,37 +386,50 @@
       bytes.byteLength
     );
 
+    // Find an exact end-of-central-directory record.
     let endOffset = -1;
-
     const searchStart = Math.max(0, bytes.length - 65557);
 
     for (let i = bytes.length - 22; i >= searchStart; i--) {
-      if (read32(view, i) === 0x06054b50) {
+      if (
+        read32(view, i) === 0x06054b50 &&
+        read16(view, i + 20) === 0 &&
+        i + 22 === bytes.length
+      ) {
         endOffset = i;
         break;
       }
     }
 
     if (endOffset < 0) {
-      throw new Error("ZIP directory not found.");
+      throw new Error("ZIP directory not found or invalid.");
     }
 
-    const entries = read16(view, endOffset + 10);
+    // This backup format supports one file on one disk only.
+    if (
+      read16(view, endOffset + 4) !== 0 ||
+      read16(view, endOffset + 6) !== 0 ||
+      read16(view, endOffset + 8) !== 1 ||
+      read16(view, endOffset + 10) !== 1
+    ) {
+      throw new Error("Unsupported ZIP archive structure.");
+    }
+
     const centralSize = read32(view, endOffset + 12);
     const centralOffset = read32(view, endOffset + 16);
 
     if (
-      entries !== 1 ||
-      centralOffset + centralSize > endOffset ||
-      centralOffset + 46 > bytes.length
+      centralOffset + centralSize !== endOffset ||
+      centralOffset + 46 > endOffset
     ) {
-      throw new Error("Unsupported or invalid ZIP archive.");
+      throw new Error("Invalid ZIP directory boundaries.");
     }
 
     if (read32(view, centralOffset) !== 0x02014b50) {
-      throw new Error("Invalid ZIP directory.");
+      throw new Error("Invalid ZIP directory entry.");
     }
 
+    const flags = read16(view, centralOffset + 8);
     const method = read16(view, centralOffset + 10);
     const checksum = read32(view, centralOffset + 16);
     const compressedSize = read32(view, centralOffset + 20);
@@ -424,39 +437,80 @@
     const nameLength = read16(view, centralOffset + 28);
     const extraLength = read16(view, centralOffset + 30);
     const commentLength = read16(view, centralOffset + 32);
+    const diskStart = read16(view, centralOffset + 34);
     const localOffset = read32(view, centralOffset + 42);
 
     if (
+      flags !== 0 ||
       method !== 0 ||
+      diskStart !== 0 ||
+      localOffset !== 0 ||
       compressedSize !== uncompressedSize ||
+      uncompressedSize < 1 ||
       uncompressedSize > MAX_DATA_SIZE ||
+      extraLength !== 0 ||
+      commentLength !== 0 ||
       nameLength > 256 ||
-      centralOffset + 46 + nameLength + extraLength + commentLength > bytes.length
+      centralOffset + 46 + nameLength !== endOffset
     ) {
-      throw new Error("Unsupported ZIP compression or invalid entry.");
+      throw new Error("Unsupported or invalid ZIP entry.");
     }
 
-    const filename = decoder.decode(
-      bytes.slice(centralOffset + 46, centralOffset + 46 + nameLength)
+    const expectedName = encoder.encode(FILE_NAME);
+
+    if (nameLength !== expectedName.length) {
+      throw new Error("Unexpected ZIP filename.");
+    }
+
+    const centralName = bytes.slice(
+      centralOffset + 46,
+      centralOffset + 46 + nameLength
     );
 
-    if (filename !== FILE_NAME) {
-      throw new Error("This ZIP does not contain a FRIDAY backup.");
+    for (let i = 0; i < expectedName.length; i++) {
+      if (centralName[i] !== expectedName[i]) {
+        throw new Error("This ZIP does not contain a FRIDAY backup.");
+      }
     }
 
-    if (read32(view, localOffset) !== 0x04034b50) {
-      throw new Error("Invalid ZIP file entry.");
+    // Verify the local file header matches the central directory.
+    if (read32(view, 0) !== 0x04034b50) {
+      throw new Error("Invalid ZIP local file header.");
     }
 
-    const localNameLength = read16(view, localOffset + 26);
-    const localExtraLength = read16(view, localOffset + 28);
+    const localFlags = read16(view, 6);
+    const localMethod = read16(view, 8);
+    const localChecksum = read32(view, 14);
+    const localCompressedSize = read32(view, 18);
+    const localUncompressedSize = read32(view, 22);
+    const localNameLength = read16(view, 26);
+    const localExtraLength = read16(view, 28);
 
-    const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+    if (
+      localFlags !== flags ||
+      localMethod !== method ||
+      localChecksum !== checksum ||
+      localCompressedSize !== compressedSize ||
+      localUncompressedSize !== uncompressedSize ||
+      localNameLength !== nameLength ||
+      localExtraLength !== 0
+    ) {
+      throw new Error("ZIP headers do not match.");
+    }
+
+    const localName = bytes.slice(30, 30 + localNameLength);
+
+    for (let i = 0; i < expectedName.length; i++) {
+      if (localName[i] !== expectedName[i]) {
+        throw new Error("ZIP filenames do not match.");
+      }
+    }
+
+    const dataOffset = 30 + localNameLength;
     const dataEnd = dataOffset + compressedSize;
 
     if (
-      dataOffset < 30 ||
-      dataEnd > centralOffset ||
+      dataEnd !== centralOffset ||
       dataEnd > bytes.length
     ) {
       throw new Error("ZIP entry is outside the archive.");
