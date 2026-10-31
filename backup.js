@@ -309,7 +309,7 @@
     } catch {
       throw new Error("Backup contains an unsupported currency.");
     }
-     
+  }    
   /* ZIP FORMAT — STORE METHOD, NO COMPRESSION */
 
   function createZip(filename, fileBytes) {
