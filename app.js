@@ -1181,11 +1181,7 @@
     document.addEventListener(name, resetInactivityTimer, { passive: true });
   });
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !locked) {
-      showLockScreen();
-    }
-  });
+
 
   /* STARTUP */
 
