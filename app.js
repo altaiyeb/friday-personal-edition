@@ -230,7 +230,7 @@
     renderAll();
     showPage("home"); 
      
-     resetInactivityTimer();
+    resetInactivityTimer();
   }
 
   function showLockScreen() {
