@@ -142,16 +142,20 @@
     }
   }
 
-  function saveData() {
+    function saveData() {
     if (!data || locked) {
       return Promise.reject(new Error("FRIDAY is locked."));
     }
 
-    // Queue writes to prevent simultaneous changes overwriting one another.
-    saveQueue = saveQueue.then(() => FridayVault.save(data));
-    return saveQueue;
-  }
+    // Recover the queue after a failed write.
+    const nextWrite = saveQueue
+      .catch(() => undefined)
+      .then(() => FridayVault.save(data));
 
+    saveQueue = nextWrite;
+    return nextWrite;
+  } 
+   
   function applySettings() {
     const settings = data.settings;
 
