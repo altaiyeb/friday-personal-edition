@@ -190,12 +190,43 @@
       getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() ||
       "#36c9e8"
     );
-
     $("#currency-setting").value = settings.currency;
     $("#date-format-setting").value = settings.dateFormat;
-    $("#timezone-setting").value = settings.timezone;
-  }
 
+    const timezoneSelect = $("#timezone-setting");
+    const currentZone = settings.timezone || "local";
+
+    if (
+      timezoneSelect.options.length <= 1 &&
+      typeof Intl.supportedValuesOf === "function"
+    ) {
+      const zones = Intl.supportedValuesOf("timeZone");
+      const fragment = document.createDocumentFragment();
+
+      zones.forEach(zone => {
+        const option = document.createElement("option");
+        option.value = zone;
+        option.textContent = zone.replaceAll("_", " ");
+        fragment.appendChild(option);
+      });
+
+      timezoneSelect.appendChild(fragment);
+    }
+
+    if (
+      currentZone !== "local" &&
+      ![...timezoneSelect.options].some(
+        option => option.value === currentZone
+      )
+    ) {
+      const option = document.createElement("option");
+      option.value = currentZone;
+      option.textContent = currentZone;
+      timezoneSelect.appendChild(option);
+    }
+
+    timezoneSelect.value = currentZone;
+     
   function showPage(page) {
     const target = $(`#page-${page}`);
     if (!target) return;
